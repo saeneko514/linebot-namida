@@ -52,6 +52,9 @@ def handle_message(event):
 
     response = requests.post(SHEETY_ENDPOINT, json=data)
 
+    print("送信データ:", data)
+    print("レスポンス:", response.status_code, response.text)
+        
     # 応答メッセージ
     if response.status_code in [200, 201]:
         reply_text = "登録ありがとうございます！"
