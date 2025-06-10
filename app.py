@@ -2,6 +2,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from datetime import datetime
 import os
 import requests
 
@@ -42,11 +43,17 @@ def handle_message(event):
     except:
         user_name = "不明"
 
+    # 日本時間に調整（UTC+9）
+    jst_now = datetime.utcnow() + timedelta(hours=9)
+    now_str = jst_now.strftime('%Y-%m-%d %H:%M:%S')
+
+    
     # SheetyへPOST
     data = {
         "sheet1": {
             "name": user_name,
-            "userId": user_id
+            "userId": user_id,
+            "timestamp": now_str
         }
     }
 
