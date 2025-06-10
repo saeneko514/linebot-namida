@@ -14,7 +14,7 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
-SHEETY_ID = "91a51e4efb03bbce4a21258eebc3ae12"
+SHEETY_ID = os.environ.get('SHEETY_ENDPOINT')
 SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/シート1"
 
 
