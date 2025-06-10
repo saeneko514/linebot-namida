@@ -15,7 +15,7 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
 SHEETY_ID = os.environ.get('SHEETY_ENDPOINT')
-SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/シート1"
+SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/sheet1"
 
 
 @app.route("/callback", methods=['POST'])
