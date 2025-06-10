@@ -59,6 +59,11 @@ def handle_message(event):
 
     response = requests.post(SHEETY_ENDPOINT, json=data)
 
+    
+    print("送信データ:", data)
+    print("レスポンスコード:", response.status_code)
+    print("レスポンス内容:", response.text)
+    
         
     # 応答メッセージ
     if response.status_code in [200, 201]:
