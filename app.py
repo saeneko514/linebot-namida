@@ -43,7 +43,7 @@ def handle_message(event):
         user_name = "不明"
 
     # SheetyへPOST
-       data = {
+    data = {
         "sheet1": {
             "name": user_name,
             "user_id": user_id
