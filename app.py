@@ -46,7 +46,7 @@ def handle_message(event):
     data = {
         "sheet1": {
             "name": user_name,
-            "user_id": user_id
+            "userId": user_id
         }
     }
 
