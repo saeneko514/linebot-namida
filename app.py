@@ -44,7 +44,7 @@ def handle_message(event):
 
     # SheetyへPOST
     data = {
-        "user": {
+        "シート1": {
             "name": user_name,
             "user_id": user_id
         }
