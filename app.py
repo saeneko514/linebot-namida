@@ -57,14 +57,17 @@ def handle_message(event):
     if entry is None:
         # 初回登録
         data = {
-            "userdata": {
+            "userdatum": {
                 "name": user_name,
                 "userId": user_id,
                 "timestamp": now_str,
                 "step": 1
             }
         }
+        
+        # POST実行
         res = requests.post(SHEETY_ENDPOINT, json=data)
+            
         print("POST status:", res.status_code)
         print("POST response:", res.text)
         if res.status_code in (200, 201):
