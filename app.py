@@ -16,7 +16,7 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
 SHEETY_ID = os.environ.get('SHEETY_ENDPOINT')
-SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/sheet1"
+SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 
 
 @app.route("/callback", methods=['POST'])
@@ -49,12 +49,12 @@ def handle_message(event):
 
     # 過去に登録があるかチェック（GET）
     response_get = requests.get(SHEETY_ENDPOINT)
-    user_data = response_get.json().get("sheet1", [])
+    user_data = response_get.json().get("userdata", [])
 
     is_first_time = not any(entry["userId"] == user_id for entry in user_data)
 
 
- #   # 初回のみ返信
+     # 初回のみ返信
     if is_first_time:
         reply_text = "登録ありがとうございます！"
         line_bot_api.reply_message(
@@ -63,9 +63,13 @@ def handle_message(event):
         )
 
         data = {
-                "sheet1": {
+                "userdata": {
                     "name": user_name,
                     "userId": user_id,
                     "timestamp": now_str
                 }
             }
+        
+    # 初回以降
+    else:
+        pass
