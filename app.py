@@ -65,13 +65,19 @@ def handle_message(event):
             }
         }
         res = requests.post(SHEETY_ENDPOINT, json=data)
-        if res.status_code == 201 or res.status_code == 200:
-            # 登録メッセージだけ送って終了（次の発言から質問スタート）
+        print("POST status:", res.status_code)
+        print("POST response:", res.text)
+        if res.status_code in (200, 201):
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください")
             )
-        return  # 終了
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="登録に失敗しました。後で再度お試しください。")
+            )
+        return
 
     # 初回以降の処理
     current_step = int(entry.get("step", 1))
