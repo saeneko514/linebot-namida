@@ -98,3 +98,6 @@ def handle_message(event):
                 event.reply_token,
                 TextSendMessage(text="全ての質問への回答ありがとうございました！")
             )
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
