@@ -48,7 +48,13 @@ def handle_message(event):
     now_str = jst_now.strftime('%Y-%m-%d %H:%M:%S')
 
     
-    # SheetyへPOST
+    # ① 過去に登録があるかチェック（GET）
+    response_get = requests.get(SHEETY_ENDPOINT)
+    user_data = response_get.json().get("sheet1", [])
+
+    is_first_time = not any(entry["userId"] == user_id for entry in user_data)
+
+    # ② 毎回ログとしてPOST（記録は常に行う）
     data = {
         "sheet1": {
             "name": user_name,
@@ -56,25 +62,15 @@ def handle_message(event):
             "timestamp": now_str
         }
     }
-
-    response = requests.post(SHEETY_ENDPOINT, json=data)
-
-    
+    response_post = requests.post(SHEETY_ENDPOINT, json=data)
     print("送信データ:", data)
-    print("レスポンスコード:", response.status_code)
-    print("レスポンス内容:", response.text)
-    
-        
-    # 応答メッセージ
-    if response.status_code in [200, 201]:
+    print("レスポンスコード:", response_post.status_code)
+    print("レスポンス内容:", response_post.text)
+
+    # ③ 初回のみ返信
+    if is_first_time:
         reply_text = "登録ありがとうございます！"
-    else:
-        reply_text = "登録に失敗しました。"
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
-
-if __name__ == "__main__":
-    app.run()
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
