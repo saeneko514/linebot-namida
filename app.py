@@ -20,6 +20,15 @@ SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 QUESTIONS_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/questions"
 
 
+# Health check
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/callback", methods=['POST'])
+def callback():
+
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
