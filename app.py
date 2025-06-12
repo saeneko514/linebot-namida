@@ -52,6 +52,7 @@ def handle_message(event):
 
     # 登録チェック
     entry = next((u for u in userdata if u["userId"] == user_id), None)
+    print(entry)
 
     if entry is None:
         # 初回登録
