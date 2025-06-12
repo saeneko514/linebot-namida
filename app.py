@@ -73,33 +73,33 @@ def handle_message(event):
             line_bot_api.push_message(user_id, TextSendMessage(text=message))
         return
 
-    # 2回目以降
-    current_step = int(entry.get("step", 1))
-    if current_step <= len(questions):
-        # 回答を記録
-        column = f"q{current_step}"
-        entry[column] = event.message.text
-        entry["step"] = current_step + 1
-        update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
-        requests.put(update_url, json={"userdata": entry})
+#     # 2回目以降
+#     current_step = int(entry.get("step", 1))
+#     if current_step <= len(questions):
+#         # 回答を記録
+#         column = f"q{current_step}"
+#         entry[column] = event.message.text
+#         entry["step"] = current_step + 1
+#         update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
+#         requests.put(update_url, json={"userdata": entry})
 
-        # 次の質問 or 完了メッセージ
-        if current_step < len(questions):
-            next_q = questions[current_step]["question"]
-            try:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=next_q))
-            except LineBotApiError:
-                line_bot_api.push_message(user_id, TextSendMessage(text=next_q))
-        else:
-            finish = "全ての質問への回答ありがとうございました！"
-            try:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=finish))
-            except LineBotApiError:
-                line_bot_api.push_message(user_id, TextSendMessage(text=finish))
+#         # 次の質問 or 完了メッセージ
+#         if current_step < len(questions):
+#             next_q = questions[current_step]["question"]
+#             try:
+#                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=next_q))
+#             except LineBotApiError:
+#                 line_bot_api.push_message(user_id, TextSendMessage(text=next_q))
+#         else:
+#             finish = "全ての質問への回答ありがとうございました！"
+#             try:
+#                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=finish))
+#             except LineBotApiError:
+#                 line_bot_api.push_message(user_id, TextSendMessage(text=finish))
 
-# Gunicorn が使うエントリポイント
-if __name__ != "__main__":
-    application = app
+# # Gunicorn が使うエントリポイント
+# if __name__ != "__main__":
+#     application = app
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+# if __name__ == "__main__":
+#     app.run(debug=True, port=5000)
