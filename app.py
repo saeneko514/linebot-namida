@@ -42,15 +42,16 @@ def handle_message(event):
     jst_now = datetime.utcnow() + timedelta(hours=9)
     now_str = jst_now.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Sheety からデータ取得
+    # Sheetyエンドポイント
     SHEETY_ID = os.environ.get('SHEETY_ENDPOINT')
     SHEETY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
     QUESTIONS_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/questions"
 
+    # データ取得
     userdata = requests.get(SHEETY_ENDPOINT).json().get("userdata", [])
     questions = requests.get(QUESTIONS_URL).json().get("questions", [])
 
-    # 登録チェック
+    # ユーザーの登録確認
     entry = next((u for u in userdata if u["userId"] == user_id), None)
     print(entry)
 
@@ -65,22 +66,32 @@ def handle_message(event):
             }
         }
         res = requests.post(SHEETY_ENDPOINT, json=data)
-        message = ("登録ありがとうございます！あなたについて何点か教えてください"
-                   if res.status_code in (200, 201)
-                   else "登録に失敗しました。後で再度お試しください。")
+
+        if res.status_code in (200, 201):
+            first_question = questions[0]["question"] if questions else "質問が見つかりませんでした。"
+            messages = [
+                TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください。"),
+                TextSendMessage(text=first_question)
+            ]
+        else:
+            messages = [TextSendMessage(text="登録に失敗しました。後で再度お試しください。")]
+
         try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+            line_bot_api.reply_message(event.reply_token, messages)
         except LineBotApiError:
-            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+            for msg in messages:
+                line_bot_api.push_message(user_id, msg)
         return
 
-    # 2回目以降
+    # --- 2回目以降の処理 ---
     current_step = int(entry.get("step", 1))
     if current_step <= len(questions):
-        # 回答を記録
+        # 回答保存
         column = f"q{current_step}"
         entry[column] = event.message.text
         entry["step"] = current_step + 1
+        entry["timestamp"] = now_str  # 更新時刻を保存（任意）
+
         update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
         try:
             res = requests.put(update_url, json={"userdatum": entry})
@@ -88,9 +99,8 @@ def handle_message(event):
             print("PUT response:", res.text)
         except Exception as e:
             print("PUTリクエストでエラー発生:", e)
-            res = None
 
-        # 次の質問 or 完了メッセージ
+        # 次の質問または完了メッセージ
         if current_step < len(questions):
             next_q = questions[current_step]["question"]
             try:
@@ -104,9 +114,10 @@ def handle_message(event):
             except LineBotApiError:
                 line_bot_api.push_message(user_id, TextSendMessage(text=finish))
 
-# Gunicorn が使うエントリポイント
+# Gunicorn用エントリポイント
 if __name__ != "__main__":
     application = app
 
+# ローカル実行時
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
