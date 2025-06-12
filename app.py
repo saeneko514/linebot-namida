@@ -82,7 +82,9 @@ def handle_message(event):
         entry[column] = event.message.text
         entry["step"] = current_step + 1
         update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
-        requests.put(update_url, json={"userdata": entry})
+        requests.put(update_url, json={"userdatum": entry})
+        print("PUT status:", res.status_code)
+        print("PUT response:", res.text)
 
         # 次の質問 or 完了メッセージ
         if current_step < len(questions):
