@@ -64,22 +64,20 @@ def handle_message(event):
                 "step": 1
             }
         }
-        
-        # POST実行
+
         res = requests.post(SHEETY_ENDPOINT, json=data)
-            
-        print("POST status:", res.status_code)
-        print("POST response:", res.text)
+
         if res.status_code in (200, 201):
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください")
-            )
+            message = "登録ありがとうございます！あなたについて何点か教えてください"
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="登録に失敗しました。後で再度お試しください。")
-            )
+            message = "登録に失敗しました。後で再度お試しください。"
+
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+        except LineBotApiError as e:
+            print("Reply failed:", e)
+            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+
         return
 
     # 初回以降の処理
@@ -94,19 +92,17 @@ def handle_message(event):
         update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
         requests.put(update_url, json={"userdata": entry})
 
-        # 次の質問があれば送信
         if current_step < len(questions):
             next_question = questions[current_step]["question"]
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=next_question)
-            )
+            try:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=next_question))
+            except LineBotApiError as e:
+                print("Reply failed:", e)
+                line_bot_api.push_message(user_id, TextSendMessage(text=next_question))
         else:
-            # 最終質問への回答時は完了メッセージを送る
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="全ての質問への回答ありがとうございました！")
-            )
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+            final_message = "全ての質問への回答ありがとうございました！"
+            try:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=final_message))
+            except LineBotApiError as e:
+                print("Reply failed:", e)
+                line_bot_api.push_message(user_id, TextSendMessage(text=final_message))
