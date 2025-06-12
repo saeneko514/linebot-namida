@@ -64,13 +64,22 @@ def handle_message(event):
             }
         }
         res = requests.post(SHEETY_ENDPOINT, json=data)
-        message = ("登録ありがとうございます！あなたについて何点か教えてください"
-                   if res.status_code in (200, 201)
-                   else "登録に失敗しました。後で再度お試しください。")
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
-        except LineBotApiError:
-            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+
+        if res.status_code in (200, 201) and questions:
+            # 登録成功なら、最初の質問を送る
+            first_q = questions[0]["question"]
+            try:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください"))
+                line_bot_api.push_message(user_id, TextSendMessage(text=first_q))
+            except LineBotApiError:
+                line_bot_api.push_message(user_id, TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください"))
+                line_bot_api.push_message(user_id, TextSendMessage(text=first_q))
+        else:
+            message = "登録に失敗しました。後で再度お試しください。"
+            try:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+            except LineBotApiError:
+                line_bot_api.push_message(user_id, TextSendMessage(text=message))
         return
 
     # 2回目以降
@@ -96,7 +105,7 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=finish))
             except LineBotApiError:
                 line_bot_api.push_message(user_id, TextSendMessage(text=finish))
-
+                
 # Gunicorn が使うエントリポイント
 if __name__ != "__main__":
     application = app
