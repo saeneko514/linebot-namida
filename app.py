@@ -55,18 +55,19 @@ def handle_message(event):
         return
 
     # 2問目以降の処理
-    step = int(entry.get("step", 1))
-    if step <= len(questions):
-        q_key = f"q{step}"
-        entry[q_key] = message
-        entry["step"] = step + 1
-        update_url = f"{USERDATA_URL}/{entry['id']}"
-        requests.put(update_url, json={"userdatum": entry})
+    step = int(entry.get("step", 1)) 
+    q_key = f"q{step + 1}"
 
-        if step < len(questions):
-            send_text(user_id, questions[step]["question"], event)
-        else:
-            send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
+    entry[q_key] = message
+    entry["step"] = step + 1
+    update_url = f"{USERDATA_URL}/{entry['id']}"
+    requests.put(update_url, json={"userdatum": entry})
+
+    # 次の質問 or 完了
+    if step + 1 < len(questions):
+        send_text(user_id, questions[step + 1]["question"], event)
+    else:
+        send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
 
 def send_text(user_id, text, event):
     try:
