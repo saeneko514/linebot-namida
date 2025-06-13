@@ -62,8 +62,8 @@ def handle_message(event):
                 "name": user_name,
                 "userId": user_id,
                 "timestamp": now_str,
-                "step": 1
-                "q1": event.message.text,
+                "step": 1,
+                "q1": event.message.text
             }
         }
         res = requests.post(SHEETY_ENDPOINT, json=data)
