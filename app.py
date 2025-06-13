@@ -64,8 +64,8 @@ def handle_message(event):
     requests.put(update_url, json={"userdatum": entry})
 
     # 次の質問 or 完了
-    if step + 1 < len(questions):
-        send_text(user_id, questions[step + 1]["question"], event)
+    if entry["step"] < total_questions:
+        send_text(user_id, questions[entry["step"]]["question"], event)
     else:
         send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
 
