@@ -38,6 +38,7 @@ def handle_message(event):
     userdata = requests.get(USERDATA_URL).json().get("userdata", [])
     questions = requests.get(QUESTIONS_URL).json().get("questions", [])
     entry = next((u for u in userdata if u["userId"] == user_id), None)
+    total_q = len(questions)
 
     if entry is None:
         # 初回登録（q1に保存）
@@ -54,17 +55,19 @@ def handle_message(event):
             send_text(user_id, "ご登録ありがとうございました！", event)
         return
 
-    # 2問目以降の処理
     step = int(entry.get("step", 1)) 
+    if step >= total_q:
+        # すでに全て回答済みなら終了
+        return
+    
     q_key = f"q{step + 1}"
-
     entry[q_key] = message
     entry["step"] = step + 1
     update_url = f"{USERDATA_URL}/{entry['id']}"
     requests.put(update_url, json={"userdatum": entry})
 
     # 次の質問 or 完了
-    if step + 1 < 4:
+    if entry["step"] < total_q:
         send_text(user_id, questions[entry["step"]]["question"], event)
     else:
         send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
