@@ -63,61 +63,32 @@ def handle_message(event):
                 "userId": user_id,
                 "timestamp": now_str,
                 "step": 1
+                "q1": event.message.text,
             }
         }
         res = requests.post(SHEETY_ENDPOINT, json=data)
 
-        if res.status_code in (200, 201):
-            first_question = questions[0]["question"] if questions else "質問が見つかりませんでした。"
-            messages = [
-                TextSendMessage(text="登録ありがとうございます！あなたについて何点か教えてください。"),
-                TextSendMessage(text=first_question)
-            ]
-        else:
-            messages = [TextSendMessage(text="登録に失敗しました。後で再度お試しください。")]
+           # 再取得して entry を更新
+        userdata = requests.get(SHEETY_ENDPOINT).json().get("userdata", [])
+        entry = next((u for u in userdata if u["userId"] == user_id), None)
 
-        try:
-            line_bot_api.reply_message(event.reply_token, messages)
-        except LineBotApiError:
-            for msg in messages:
-                line_bot_api.push_message(user_id, msg)
-        return
-
-    # --- 2回目以降の処理 ---
-    current_step = int(entry.get("step", 1))
-    if current_step <= len(questions):
-        # 回答保存
-        column = f"q{current_step}"
-        entry[column] = event.message.text
-        entry["step"] = current_step + 1
-        entry["timestamp"] = now_str  # 更新時刻を保存（任意）
-
-        update_url = f"{SHEETY_ENDPOINT}/{entry['id']}"
-        try:
-            res = requests.put(update_url, json={"userdatum": entry})
-            print("PUT status:", res.status_code)
-            print("PUT response:", res.text)
-        except Exception as e:
-            print("PUTリクエストでエラー発生:", e)
-
-        # 次の質問または完了メッセージ
-        if current_step < len(questions):
-            next_q = questions[current_step]["question"]
+        # 最初の質問を送る
+        if len(questions) >= 2:  # q2以降がある前提
+            next_q = questions[1]["question"]
             try:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=next_q))
             except LineBotApiError:
                 line_bot_api.push_message(user_id, TextSendMessage(text=next_q))
         else:
-            finish = "全ての質問への回答ありがとうございました！"
+            finish = "回答ありがとうございました！"
             try:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=finish))
             except LineBotApiError:
                 line_bot_api.push_message(user_id, TextSendMessage(text=finish))
+        return
+
+
 
 # Gunicorn用エントリポイント
 if __name__ != "__main__":
     application = app
-
-# ローカル実行時
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
