@@ -75,7 +75,6 @@ def handle_message(event):
     else:
         send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
 
-    # --- この部分は必ずインデントして handle_message の中に ---
     if entry is not None:
         diary_data = {
             "diary": {
