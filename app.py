@@ -14,6 +14,7 @@ handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
 # エンドポイント
 SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
+DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 QUESTIONS_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/questions"
 
 @app.route("/", methods=["GET"])
@@ -71,6 +72,19 @@ def handle_message(event):
         send_text(user_id, questions[entry["step"]]["question"], event)
     else:
         send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
+
+
+    diary_data = {
+        "diary": {
+            "name": name,
+            "userId": user_id,
+            "timestamp": now,
+            "diary": message
+        }
+    }
+    requests.post(DIARY_ENDPOINT, json=diary_data)
+
+
 
 def send_text(user_id, text, event):
     try:
