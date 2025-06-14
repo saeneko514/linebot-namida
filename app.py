@@ -71,7 +71,7 @@ def handle_message(event):
     response = requests.post(DIARY_ENDPOINT, json=diary_data)
     print("POST diary status:", response.status_code)
     print("POST diary response:", response.text)
-    # send_text(user_id, "日記を保存しました。ありがとう！", event)
+    send_text(user_id, "日記を保存しました。ありがとう！", event)
 
 def send_text(user_id, text, event):
     try:
