@@ -31,7 +31,7 @@ def job():
         push_message(user_id, MESSAGE_TEXT)
 
 # 22:00に通知
-schedule.every().day.at("13:00").do(job)
+schedule.every().day.at("16:51").do(job)
 
 # 実行ループ
 while True:
