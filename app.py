@@ -12,7 +12,7 @@ line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
 
 # エンドポイント
-SHEETY_ID = os.environ["SHEETY_ENDPOINT"]
+SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 QUESTIONS_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/questions"
 
