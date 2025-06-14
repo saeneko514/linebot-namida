@@ -85,6 +85,8 @@ def handle_message(event):
             }
         }
         requests.post(DIARY_ENDPOINT, json=diary_data)
+        print("POST diary status:", response.status_code)
+        print("POST diary response:", response.text)
 
 
 def send_text(user_id, text, event):
