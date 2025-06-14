@@ -33,8 +33,10 @@ def handle_message(event):
     user_id = event.source.user_id
     message = event.message.text
     now = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
-    try: name = line_bot_api.get_profile(user_id).display_name
-    except: name = "不明"
+    try:
+        name = line_bot_api.get_profile(user_id).display_name
+    except:
+        name = "不明"
 
     userdata = requests.get(USERDATA_URL).json().get("userdata", [])
     questions = requests.get(QUESTIONS_URL).json().get("questions", [])
@@ -56,11 +58,11 @@ def handle_message(event):
             send_text(user_id, "ご登録ありがとうございました！", event)
         return
 
-    step = int(entry.get("step", 1)) 
+    step = int(entry.get("step", 1))
     if step >= total_q:
         # すでに全て回答済みなら終了
         return
-    
+
     q_key = f"q{step + 1}"
     entry[q_key] = message
     entry["step"] = step + 1
@@ -73,17 +75,17 @@ def handle_message(event):
     else:
         send_text(user_id, "全ての質問へのご回答ありがとうございました！", event)
 
-
-    diary_data = {
-        "diary": {
-            "name": name,
-            "userId": user_id,
-            "timestamp": now,
-            "diary": message
+    # --- この部分は必ずインデントして handle_message の中に ---
+    if entry is not None:
+        diary_data = {
+            "diary": {
+                "name": name,
+                "userId": user_id,
+                "timestamp": now,
+                "diary": message
+            }
         }
-    }
-    requests.post(DIARY_ENDPOINT, json=diary_data)
-
+        requests.post(DIARY_ENDPOINT, json=diary_data)
 
 
 def send_text(user_id, text, event):
@@ -93,7 +95,7 @@ def send_text(user_id, text, event):
         line_bot_api.push_message(user_id, TextSendMessage(text=text))
 
 # エントリポイント
-if __name__ != "__main__":
-    application = app
-else:
+if __name__ == "__main__":
     app.run(debug=True, port=5000)
+else:
+    application = app
