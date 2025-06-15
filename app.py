@@ -16,8 +16,8 @@ SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 
-# # 直近のメッセージ記録用（userId → (message, datetime)）
-# recent_messages = {}
+# 直近のイベントIDを記録（再送防止用）
+recent_message_ids = set()
 
 @app.route("/", methods=["GET"])
 def health():
@@ -35,19 +35,15 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    event_id = event.message.id
+    if event_id in recent_message_ids:
+        print(f"重複イベントのためスキップ: event_id={event_id}")
+        return
+    recent_message_ids.add(event_id)
+
     user_id = event.source.user_id
     message = event.message.text
     now = datetime.utcnow() + timedelta(hours=9)
-
-    # # 重複チェック
-    # last = recent_messages.get(user_id)
-    # if last:
-    #     last_msg, last_time = last
-    #     if message == last_msg and (now - last_time) < timedelta(seconds=30):
-    #         print(f"重複メッセージのためスキップ: user={user_id}, msg={message}")
-    #         return
-    # # メッセージ記録更新
-    # recent_messages[user_id] = (message, now)
 
     # ユーザープロフィール取得
     try:
@@ -56,7 +52,13 @@ def handle_message(event):
         name = "不明"
 
     # ユーザーデータ取得
-    userdata = requests.get(USERDATA_URL).json().get("userdata", [])
+    try:
+        userdata = requests.get(USERDATA_URL).json().get("userdata", [])
+    except Exception as e:
+        print("ユーザーデータ取得エラー:", e)
+        send_text(user_id, "サーバーエラーが発生しました。", event)
+        return
+
     entry = next((u for u in userdata if u["userId"] == user_id), None)
 
     if entry is None:
@@ -68,8 +70,10 @@ def handle_message(event):
                 "timestamp": now.strftime("%Y-%m-%d %H:%M:%S")
             }
         }
-        requests.post(USERDATA_URL, json=data)
-
+        try:
+            requests.post(USERDATA_URL, json=data)
+        except Exception as e:
+            print("初回登録エラー:", e)
         send_text(user_id, "ご登録ありがとうございます！次にこちらからアンケートに答えてください", event)
         return
 
@@ -82,10 +86,14 @@ def handle_message(event):
             "diary": message
         }
     }
-    response = requests.post(DIARY_ENDPOINT, json=diary_data)
-    print("POST diary status:", response.status_code)
-    print("POST diary response:", response.text)
-    # send_text(user_id, "日記を保存しました。ありがとう！", event)
+    try:
+        response = requests.post(DIARY_ENDPOINT, json=diary_data)
+        print("POST diary status:", response.status_code)
+        print("POST diary response:", response.text)
+        send_text(user_id, "日記を保存しました。ありがとう！", event)
+    except Exception as e:
+        print("日記保存エラー:", e)
+        send_text(user_id, "日記の保存中にエラーが発生しました。", event)
 
 def send_text(user_id, text, event):
     try:
