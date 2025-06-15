@@ -74,7 +74,9 @@ def handle_message(event):
             requests.post(USERDATA_URL, json=data)
         except Exception as e:
             print("初回登録エラー:", e)
-        send_text(user_id, "ご登録ありがとうございます！次にこちらからアンケートに答えてください", event)
+        send_text(user_id, "ご登録ありがとうございます！\n"
+        "次にこちらからアンケートに答えてください\n"
+                  "https://namisapo3.love", event)
         return
 
     # 2回目以降 → 日記として保存
