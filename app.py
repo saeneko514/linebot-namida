@@ -16,24 +16,40 @@ SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 
+# 直近のメッセージ記録用（userId → (message, datetime)）
+recent_messages = {}
 
 @app.route("/", methods=["GET"])
-def health(): return jsonify({"status": "ok"}), 200
+def health():
+    return jsonify({"status": "ok"}), 200
 
 @app.route("/callback", methods=["POST"])
 def callback():
     signature = request.headers.get("X-Line-Signature", "")
     body = request.get_data(as_text=True)
-    try: handler.handle(body, signature)
-    except InvalidSignatureError: abort(400)
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
     return "OK"
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
     message = event.message.text
-    now = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.utcnow() + timedelta(hours=9)
 
+    # 重複チェック
+    last = recent_messages.get(user_id)
+    if last:
+        last_msg, last_time = last
+        if message == last_msg and (now - last_time) < timedelta(seconds=30):
+            print(f"重複メッセージのためスキップ: user={user_id}, msg={message}")
+            return
+    # メッセージ記録更新
+    recent_messages[user_id] = (message, now)
+
+    # ユーザープロフィール取得
     try:
         name = line_bot_api.get_profile(user_id).display_name
     except:
@@ -49,22 +65,20 @@ def handle_message(event):
             "userdatum": {
                 "name": name,
                 "userId": user_id,
-                "timestamp": now
+                "timestamp": now.strftime("%Y-%m-%d %H:%M:%S")
             }
         }
         requests.post(USERDATA_URL, json=data)
 
-        # 登録完了メッセージ
         send_text(user_id, "ご登録ありがとうございます！次にこちらからアンケートに答えてください", event)
         return
-        
 
     # 2回目以降 → 日記として保存
     diary_data = {
         "diary": {
             "name": name,
             "userId": user_id,
-            "timestamp": now,
+            "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
             "diary": message
         }
     }
@@ -79,7 +93,6 @@ def send_text(user_id, text, event):
     except LineBotApiError:
         line_bot_api.push_message(user_id, TextSendMessage(text=text))
 
-# エントリポイント
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
 else:
