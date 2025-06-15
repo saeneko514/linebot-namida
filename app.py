@@ -16,8 +16,8 @@ SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
 DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 
-# 直近のメッセージ記録用（userId → (message, datetime)）
-recent_messages = {}
+# # 直近のメッセージ記録用（userId → (message, datetime)）
+# recent_messages = {}
 
 @app.route("/", methods=["GET"])
 def health():
@@ -39,15 +39,15 @@ def handle_message(event):
     message = event.message.text
     now = datetime.utcnow() + timedelta(hours=9)
 
-    # 重複チェック
-    last = recent_messages.get(user_id)
-    if last:
-        last_msg, last_time = last
-        if message == last_msg and (now - last_time) < timedelta(seconds=30):
-            print(f"重複メッセージのためスキップ: user={user_id}, msg={message}")
-            return
-    # メッセージ記録更新
-    recent_messages[user_id] = (message, now)
+    # # 重複チェック
+    # last = recent_messages.get(user_id)
+    # if last:
+    #     last_msg, last_time = last
+    #     if message == last_msg and (now - last_time) < timedelta(seconds=30):
+    #         print(f"重複メッセージのためスキップ: user={user_id}, msg={message}")
+    #         return
+    # # メッセージ記録更新
+    # recent_messages[user_id] = (message, now)
 
     # ユーザープロフィール取得
     try:
@@ -85,7 +85,7 @@ def handle_message(event):
     response = requests.post(DIARY_ENDPOINT, json=diary_data)
     print("POST diary status:", response.status_code)
     print("POST diary response:", response.text)
-    send_text(user_id, "日記を保存しました。ありがとう！", event)
+    # send_text(user_id, "日記を保存しました。ありがとう！", event)
 
 def send_text(user_id, text, event):
     try:
