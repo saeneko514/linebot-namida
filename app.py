@@ -2,11 +2,12 @@ from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from linebot.models import QuickReply, QuickReplyButton, MessageAction, TextSendMessage
+from linebot.models import QuickReply, QuickReplyButton, MessageAction
 from datetime import datetime, timedelta
 import os, requests
 
 app = Flask(__name__)
+user_state = {}
 
 # LINE設定
 line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
@@ -20,14 +21,15 @@ DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 # 直近のイベントIDを記録（再送防止用）
 recent_message_ids = set()
 
-#感情の選択肢
+# 感情の選択肢
 emotion_buttons = [
-    QuickReplyButton(action=MessageAction(label="喜び", text="喜び")),
-    QuickReplyButton(action=MessageAction(label="悲しみ", text="悲しみ")),
-    QuickReplyButton(action=MessageAction(label="怒り", text="怒り")),
-    QuickReplyButton(action=MessageAction(label="驚き", text="驚き")),
-    QuickReplyButton(action=MessageAction(label="恐れ", text="恐れ")),
-    QuickReplyButton(action=MessageAction(label="安心", text="安心")),
+    QuickReplyButton(action=MessageAction(label="怖かった", text="怖かった")),
+    QuickReplyButton(action=MessageAction(label="怒った", text="怒った")),
+    QuickReplyButton(action=MessageAction(label="悲しかった", text="悲しかった")),
+    QuickReplyButton(action=MessageAction(label="寂しかった", text="寂しかった")),
+    QuickReplyButton(action=MessageAction(label="無価値観", text="無価値観")),
+    QuickReplyButton(action=MessageAction(label="その他", text="その他")),
+    QuickReplyButton(action=MessageAction(label="わからない", text="わからない")),
 ]
 
 @app.route("/", methods=["GET"])
@@ -85,29 +87,67 @@ def handle_message(event):
             requests.post(USERDATA_URL, json=data)
         except Exception as e:
             print("初回登録エラー:", e)
-        send_text(user_id, "ご登録ありがとうございます！\n"
-        "次にこちらからアンケートに答えてください\n"
-                  "https://namisapo3.love", event)
+        send_text(user_id, "ご登録ありがとうございます！\n次にこちらからアンケートに答えてください\nhttps://namisapo3.love", event)
         return
 
-    # 2回目以降 → 日記として保存
-    diary_data = {
-        "diary": {
-            "name": name,
-            "userId": user_id,
-            "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
-            "diary": message
-        }
-    }
+    # ステップ3: スコア入力を待っている状態か？
+    if user_id in user_state and user_state[user_id].get("awaiting_score"):
+        try:
+            score = int(message)
+            if 0 <= score <= 100:
+                diary_data = {
+                    "diary": {
+                        "name": name,
+                        "userId": user_id,
+                        "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+                        "diary": user_state[user_id]["last_diary"],
+                        "emotion": "無価値観",
+                        "score": score
+                    }
+                }
+                requests.post(DIARY_ENDPOINT, json=diary_data)
+                send_text(user_id, "スコアを保存しました！\n今日もお疲れ様でした。", event)
+                user_state.pop(user_id, None)
+            else:
+                send_text(user_id, "0〜100の数値で入力してください。", event)
+            return
+        except:
+            send_text(user_id, "数値で入力してください（例：70）", event)
+            return
+
+    # ステップ2: 感情の選択
+    emotion_texts = [btn.action.text for btn in emotion_buttons]
+    if message in emotion_texts:
+        if message == "無価値観":
+            if user_id not in user_state:
+                user_state[user_id] = {}
+            user_state[user_id]["emotion"] = message
+            user_state[user_id]["awaiting_score"] = True
+            send_text(user_id, "今日の自己肯定感を100点満点で教えてください。", event)
+        else:
+            diary_data = {
+                "diary": {
+                    "name": name,
+                    "userId": user_id,
+                    "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+                    "diary": user_state.get(user_id, {}).get("last_diary", ""),
+                    "emotion": message
+                }
+            }
+            try:
+                requests.post(DIARY_ENDPOINT, json=diary_data)
+                send_text(user_id, "ありがとうございました。\nゆっくり休んでくださいね。", event)
+                user_state.pop(user_id, None)
+            except:
+                send_text(user_id, "保存中にエラーが発生しました。", event)
+        return
+
+    # ステップ1: 日記の入力
     try:
-        response = requests.post(DIARY_ENDPOINT, json=diary_data)
-        print("POST diary status:", response.status_code)
-        print("POST diary response:", response.text)
+        user_state[user_id] = {"last_diary": message}
         send_text(
-            user_id, 
-            "５行日記で書いた出来事で\n"
-            "あなたが感じた感情の種類を\n"
-            "特定してください。",
+            user_id,
+            "５行日記で書いた出来事で\nあなたが感じた感情の種類を\n特定してください。",
             event,
             quick_reply_items=emotion_buttons
         )
@@ -128,7 +168,6 @@ def send_text(user_id, text, event, quick_reply_items=None):
         line_bot_api.reply_message(event.reply_token, message)
     except LineBotApiError:
         line_bot_api.push_message(user_id, TextSendMessage(text=text))
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
