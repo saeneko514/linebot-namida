@@ -106,7 +106,7 @@ def handle_message(event):
                     }
                 }
                 requests.post(DIARY_ENDPOINT, json=diary_data)
-                send_text(user_id, "スコアを保存しました！\n今日もお疲れ様でした。", event)
+                send_text(user_id, "ありがとうございました。\nゆっくり休んでくださいね。", event)
                 user_state.pop(user_id, None)
             else:
                 send_text(user_id, "0〜100の数値で入力してください。", event)
