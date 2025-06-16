@@ -2,6 +2,7 @@ from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import QuickReply, QuickReplyButton, MessageAction, TextSendMessage
 from datetime import datetime, timedelta
 import os, requests
 
@@ -18,6 +19,16 @@ DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 
 # 直近のイベントIDを記録（再送防止用）
 recent_message_ids = set()
+
+#感情の選択肢
+emotion_buttons = [
+    QuickReplyButton(action=MessageAction(label="喜び", text="喜び")),
+    QuickReplyButton(action=MessageAction(label="悲しみ", text="悲しみ")),
+    QuickReplyButton(action=MessageAction(label="怒り", text="怒り")),
+    QuickReplyButton(action=MessageAction(label="驚き", text="驚き")),
+    QuickReplyButton(action=MessageAction(label="恐れ", text="恐れ")),
+    QuickReplyButton(action=MessageAction(label="安心", text="安心")),
+]
 
 @app.route("/", methods=["GET"])
 def health():
@@ -92,16 +103,32 @@ def handle_message(event):
         response = requests.post(DIARY_ENDPOINT, json=diary_data)
         print("POST diary status:", response.status_code)
         print("POST diary response:", response.text)
-        send_text(user_id, "日記を保存しました。ありがとう！", event)
+        send_text(
+            user_id, 
+            "５行日記で書いた出来事で\n"
+            "あなたが感じた感情の種類を\n"
+            "特定してください。",
+            event,
+            quick_reply_items=emotion_buttons
+        )
     except Exception as e:
         print("日記保存エラー:", e)
         send_text(user_id, "日記の保存中にエラーが発生しました。", event)
 
-def send_text(user_id, text, event):
+def send_text(user_id, text, event, quick_reply_items=None):
     try:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text))
+        if quick_reply_items:
+            message = TextSendMessage(
+                text=text,
+                quick_reply=QuickReply(items=quick_reply_items)
+            )
+        else:
+            message = TextSendMessage(text=text)
+
+        line_bot_api.reply_message(event.reply_token, message)
     except LineBotApiError:
         line_bot_api.push_message(user_id, TextSendMessage(text=text))
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
