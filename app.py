@@ -79,7 +79,11 @@ def handle_message(event):
             "userdatum": {
                 "name": name,
                 "userId": user_id,
-                "timestamp": now.strftime("%Y-%m-%d")
+                "timestamp": now.strftime("%Y-%m-%d"),
+                "diary": "",
+                "emotion": "",
+                "score": "",
+                "type": "register"
             }
         }
         try:
@@ -95,13 +99,14 @@ def handle_message(event):
             score = int(message)
             if 0 <= score <= 100:
                 diary_data = {
-                    "diary": {
+                    "userdatum": {
                         "name": name,
                         "userId": user_id,
                         "timestamp": now.strftime("%Y-%m-%d"),
                         "diary": user_state[user_id]["last_diary"],
-                        "emotion": "無価値観",
-                        "score": score
+                        "emotion": user_state[user_id].get("emotion", ""),
+                        "score": score,
+                        "type": "diary"
                     }
                 }
                 requests.post(USERDATA_URL, json=diary_data)
@@ -115,29 +120,33 @@ def handle_message(event):
             return
 
     # ステップ2: 感情の選択
-    emotion_texts = [btn.action.text for btn in emotion_buttons]
     if message in emotion_texts:
+        if user_id not in user_state:
+            user_state[user_id] = {}
+    
+        user_state[user_id]["emotion"] = message
+    
         if message == "無価値観":
-            if user_id not in user_state:
-                user_state[user_id] = {}
-            user_state[user_id]["emotion"] = message
             user_state[user_id]["awaiting_score"] = True
             send_text(user_id, "今日の自己肯定感を100点満点で教えてください。", event)
         else:
             diary_data = {
-                "diary": {
+                "userdatum": {
                     "name": name,
                     "userId": user_id,
-                    "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
-                    "diary": user_state.get(user_id, {}).get("last_diary", ""),
-                    "emotion": message
+                    "timestamp": now.strftime("%Y-%m-%d"),
+                    "diary": user_state[user_id].get("last_diary", ""),
+                    "emotion": message,
+                    "score": "",
+                    "type": "diary"
                 }
             }
             try:
                 requests.post(USERDATA_URL, json=diary_data)
                 send_text(user_id, "ありがとうございました。\nゆっくり休んでくださいね。", event)
                 user_state.pop(user_id, None)
-            except:
+            except Exception as e:
+                print("日記保存エラー:", e)
                 send_text(user_id, "保存中にエラーが発生しました。", event)
         return
 
