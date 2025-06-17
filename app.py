@@ -16,7 +16,6 @@ handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
 # エンドポイント
 SHEETY_ID = os.environ["SHEETY_ID"]
 USERDATA_URL = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/userdata"
-DIARY_ENDPOINT = f"https://api.sheety.co/{SHEETY_ID}/lineUserData/diary"
 
 # 直近のイベントIDを記録（再送防止用）
 recent_message_ids = set()
@@ -105,7 +104,7 @@ def handle_message(event):
                         "score": score
                     }
                 }
-                requests.post(DIARY_ENDPOINT, json=diary_data)
+                requests.post(USERDATA_URL, json=diary_data)
                 send_text(user_id, "ありがとうございました。\nゆっくり休んでくださいね。", event)
                 user_state.pop(user_id, None)
             else:
@@ -135,7 +134,7 @@ def handle_message(event):
                 }
             }
             try:
-                requests.post(DIARY_ENDPOINT, json=diary_data)
+                requests.post(USERDATA_URL, json=diary_data)
                 send_text(user_id, "ありがとうございました。\nゆっくり休んでくださいね。", event)
                 user_state.pop(user_id, None)
             except:
