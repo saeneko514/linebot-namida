@@ -156,7 +156,7 @@ def handle_message(event):
 
     # ステップ1: 日記の入力
     try:
-        user_state[user_id] = {"last_diary": message}
+        user_state.setdefault(user_id, {})["last_diary"] = message
         send_text(
             user_id,
             "５行日記で書いた出来事で\nあなたが感じた感情の種類を\n特定してください。",
