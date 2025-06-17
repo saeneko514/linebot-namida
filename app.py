@@ -31,6 +31,10 @@ emotion_buttons = [
     QuickReplyButton(action=MessageAction(label="わからない", text="わからない")),
 ]
 
+emotion_texts = [
+    "怖かった", "怒った", "悲しかった", "寂しかった", "無価値観", "その他", "わからない"
+]
+
 @app.route("/", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
