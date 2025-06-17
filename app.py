@@ -80,7 +80,7 @@ def handle_message(event):
             "userdatum": {
                 "name": name,
                 "userId": user_id,
-                "timestamp": now.strftime("%Y-%m-%d %H:%M:%S")
+                "timestamp": now.strftime("%Y-%m-%d")
             }
         }
         try:
