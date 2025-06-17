@@ -99,7 +99,7 @@ def handle_message(event):
                     "diary": {
                         "name": name,
                         "userId": user_id,
-                        "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+                        "timestamp": now.strftime("%Y-%m-%d"),
                         "diary": user_state[user_id]["last_diary"],
                         "emotion": "無価値観",
                         "score": score
