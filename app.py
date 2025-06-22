@@ -94,7 +94,7 @@ def handle_message(event):
             requests.post(USERDATA_URL, json=data)
         except Exception as e:
             print("初回登録エラー:", e)
-        send_text(user_id, "同意いただきありがとうございます。\n次にこちらからアンケートに答えてください\nhttps://app.namisapo3.love", event)
+        send_text(user_id, "回答ありがとうございました！\nこれからかんじょうにっきをよろしくお願いします☺", event)
         return
 
     # ステップ3: スコア入力を待っている状態か？
