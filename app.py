@@ -77,25 +77,6 @@ def handle_message(event):
 
     entry = next((u for u in userdata if u["userId"] == user_id), None)
 
-    if entry is None:
-        # 初回登録
-        data = {
-            "userdatum": {
-                "name": name,
-                "userId": user_id,
-                "timestamp": now.strftime("%Y-%m-%d"),
-                "diary": "",
-                "emotion": "",
-                "score": "",
-                "type": "register"
-            }
-        }
-        try:
-            requests.post(USERDATA_URL, json=data)
-        except Exception as e:
-            print("初回登録エラー:", e)
-        send_text(user_id, "回答ありがとうございました！\nこれからかんじょうにっきをよろしくお願いします☺", event)
-        return
 
     # ステップ3: スコア入力を待っている状態か？
     if user_id in user_state and user_state[user_id].get("awaiting_score"):
@@ -110,7 +91,6 @@ def handle_message(event):
                         "diary": user_state[user_id]["last_diary"],
                         "emotion": user_state[user_id].get("emotion", ""),
                         "score": score,
-                        "type": "diary"
                     }
                 }
                 requests.post(USERDATA_URL, json=diary_data)
@@ -142,7 +122,6 @@ def handle_message(event):
                     "diary": user_state[user_id].get("last_diary", ""),
                     "emotion": message,
                     "score": "",
-                    "type": "diary"
                 }
             }
             try:
